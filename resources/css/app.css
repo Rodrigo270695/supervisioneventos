@@ -1,0 +1,269 @@
+@import 'tailwindcss';
+
+@import "tw-animate-css";
+
+@source '../../vendor/laravel/framework/src/Illuminate/Pagination/resources/views/*.blade.php';
+@source '../../storage/framework/views/*.php';
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --font-sans:
+    Instrument Sans, ui-sans-serif, system-ui, sans-serif, 'Apple Color Emoji',
+    'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
+
+  --radius-lg: var(--radius);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-sm: calc(var(--radius) - 4px);
+
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+
+  --color-border: var(--border);
+  --color-input: var(--input);
+  --color-ring: var(--ring);
+
+  --color-chart-1: var(--chart-1);
+  --color-chart-2: var(--chart-2);
+  --color-chart-3: var(--chart-3);
+  --color-chart-4: var(--chart-4);
+  --color-chart-5: var(--chart-5);
+
+  /* Colores para eventos */
+  --color-purple: var(--purple);
+  --color-navy: var(--navy);
+  --color-forest: var(--forest);
+  --color-charcoal: var(--charcoal);
+
+  --color-success: var(--success);
+  --color-pending: var(--pending);
+  --color-error: var(--error);
+  --color-info: var(--info);
+
+  --color-purple-light: var(--purple-light);
+  --color-navy-light: var(--navy-light);
+  --color-forest-light: var(--forest-light);
+  --color-charcoal-light: var(--charcoal-light);
+
+  --color-neutral-dark: var(--neutral-dark);
+  --color-neutral-medium: var(--neutral-medium);
+  --color-neutral-light: var(--neutral-light);
+  --color-subtle-accent: var(--subtle-accent);
+
+  --color-sidebar: var(--sidebar-background);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-ring: var(--sidebar-ring);
+}
+
+/*
+  The default border color has changed to `currentColor` in Tailwind CSS v4,
+  so we've added these compatibility styles to make sure everything still
+  looks the same as it did with Tailwind CSS v3.
+
+  If we ever want to remove these styles, we need to add an explicit border
+  color utility to any element that depends on these defaults.
+*/
+@layer base {
+  *,
+  ::after,
+  ::before,
+  ::backdrop,
+  ::file-selector-button {
+    border-color: var(--color-gray-200, currentColor);
+  }
+}
+
+@layer utilities {
+  body,
+  html {
+    --font-sans:
+      'Instrument Sans', ui-sans-serif, system-ui, sans-serif,
+      'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol',
+      'Noto Color Emoji';
+  }
+
+  /* Gradientes para eventos */
+  .bg-celebration-gradient {
+    background: linear-gradient(135deg, var(--color-purple), var(--color-navy));
+  }
+
+  .bg-elegance-gradient {
+    background: linear-gradient(135deg, var(--color-neutral-dark), var(--color-neutral-medium));
+  }
+
+  .bg-premium-gradient {
+    background: linear-gradient(135deg, var(--color-charcoal), var(--color-purple));
+  }
+}
+
+:root {
+  /* Colores base originales */
+  --background: hsl(0 0% 100%);
+  --foreground: hsl(0 0% 3.9%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(0 0% 3.9%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(0 0% 3.9%);
+  --primary: hsl(210, 65%, 25%); /* Navy oscuro */
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(20, 40%, 55%); /* Cobre neutro */
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(0 0% 96.1%);
+  --muted-foreground: hsl(0 0% 45.1%);
+  --accent: hsl(260, 40%, 30%); /* Actualizado a morado de bajo relieve */
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 84.2% 60.2%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(0 0% 92.8%);
+  --input: hsl(0 0% 89.8%);
+  --ring: hsl(260, 40%, 30%); /* Actualizado a morado de bajo relieve */
+
+  /* Colores para gráficos actualizados */
+  --chart-1: hsl(260, 40%, 30%); /* Morado oscuro - Bodas */
+  --chart-2: hsl(210, 65%, 25%); /* Navy oscuro - Quinceañeras */
+  --chart-3: hsl(150, 30%, 35%); /* Verde forestal - Corporativos */
+  --chart-4: hsl(30, 60%, 45%);  /* Cobre - Cumpleaños */
+  --chart-5: hsl(200, 35%, 40%); /* Azul acero - Otros eventos */
+
+  /* Nuevos colores para eventos */
+  --purple: hsl(260, 40%, 30%);
+  --navy: hsl(210, 65%, 25%);
+  --forest: hsl(150, 30%, 35%);
+  --charcoal: hsl(200, 15%, 25%);
+
+  --success: hsl(150, 50%, 35%);
+  --pending: hsl(30, 60%, 45%);
+  --error: hsl(0, 65%, 45%);
+  --info: hsl(210, 60%, 40%);
+
+  --purple-light: hsl(260, 40%, 85%);
+  --navy-light: hsl(210, 40%, 85%);
+  --forest-light: hsl(150, 30%, 85%);
+  --charcoal-light: hsl(200, 15%, 85%);
+
+  --neutral-dark: hsl(210, 15%, 20%);
+  --neutral-medium: hsl(210, 10%, 55%);
+  --neutral-light: hsl(210, 15%, 95%);
+  --subtle-accent: hsl(260, 20%, 95%);
+
+  --radius: 0.5rem;
+  --sidebar-background: hsl(210, 15%, 95%); /* Neutral light */
+  --sidebar-foreground: hsl(210, 15%, 20%); /* Neutral dark */
+  --sidebar-primary: hsl(260, 40%, 30%); /* Actualizado a morado */
+  --sidebar-primary-foreground: hsl(0 0% 98%);
+  --sidebar-accent: hsl(260, 15%, 90%); /* Actualizado con tinte morado */
+  --sidebar-accent-foreground: hsl(210, 15%, 20%); /* Neutral dark */
+  --sidebar-border: hsl(260, 10%, 90%); /* Actualizado con tinte morado */
+  --sidebar-ring: hsl(260, 40%, 30%); /* Actualizado a morado */
+  --sidebar: hsl(260, 10%, 95%); /* Actualizado con tinte morado */
+}
+
+.dark {
+  /* Colores base originales para el modo oscuro */
+  --background: hsl(210, 15%, 10%); /* Neutral dark más oscuro */
+  --foreground: hsl(210, 15%, 95%); /* Neutral light */
+  --card: hsl(210, 15%, 12%); /* Neutral dark más oscuro */
+  --card-foreground: hsl(210, 15%, 95%); /* Neutral light */
+  --popover: hsl(210, 15%, 12%); /* Neutral dark más oscuro */
+  --popover-foreground: hsl(210, 15%, 95%); /* Neutral light */
+  --primary: hsl(210, 65%, 35%); /* Navy ajustado para modo oscuro */
+  --primary-foreground: hsl(0 0% 98%);
+  --secondary: hsl(20, 40%, 45%); /* Cobre ajustado para modo oscuro */
+  --secondary-foreground: hsl(0 0% 9%);
+  --muted: hsl(210, 15%, 20%); /* Neutral dark */
+  --muted-foreground: hsl(210, 10%, 70%); /* Neutral medium más claro */
+  --accent: hsl(260, 40%, 40%); /* Morado ajustado para modo oscuro */
+  --accent-foreground: hsl(0 0% 98%);
+  --destructive: hsl(0 84% 60%);
+  --destructive-foreground: hsl(0 0% 98%);
+  --border: hsl(210, 15%, 25%); /* Neutral dark más claro */
+  --input: hsl(210, 15%, 25%); /* Neutral dark más claro */
+  --ring: hsl(260, 40%, 45%); /* Morado ajustado para modo oscuro */
+
+  /* Colores para gráficos ajustados para modo oscuro */
+  --chart-1: hsl(260, 40%, 40%); /* Morado ajustado */
+  --chart-2: hsl(210, 65%, 45%); /* Navy ajustado */
+  --chart-3: hsl(150, 30%, 45%); /* Forestal ajustado */
+  --chart-4: hsl(30, 60%, 50%);  /* Cobre ajustado */
+  --chart-5: hsl(200, 35%, 50%); /* Azul acero ajustado */
+
+  /* Nuevos colores para eventos ajustados para modo oscuro */
+  --purple: hsl(260, 40%, 40%);
+  --navy: hsl(210, 65%, 45%);
+  --forest: hsl(150, 30%, 45%);
+  --charcoal: hsl(200, 15%, 35%);
+
+  --success: hsl(150, 50%, 45%);
+  --pending: hsl(30, 60%, 50%);
+  --error: hsl(0, 65%, 50%);
+  --info: hsl(210, 60%, 50%);
+
+  --purple-light: hsl(260, 30%, 40%);
+  --navy-light: hsl(210, 40%, 40%);
+  --forest-light: hsl(150, 25%, 40%);
+  --charcoal-light: hsl(200, 15%, 40%);
+
+  --neutral-dark: hsl(210, 15%, 15%);
+  --neutral-medium: hsl(210, 10%, 60%);
+  --neutral-light: hsl(210, 15%, 90%);
+  --subtle-accent: hsl(260, 20%, 25%);
+
+  --sidebar-background: hsl(260, 15%, 15%); /* Actualizado con tinte morado */
+  --sidebar-foreground: hsl(210, 15%, 90%); /* Neutral light */
+  --sidebar-primary: hsl(260, 40%, 45%); /* Morado ajustado para modo oscuro */
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(260, 15%, 25%); /* Actualizado con tinte morado */
+  --sidebar-accent-foreground: hsl(210, 15%, 90%); /* Neutral light */
+  --sidebar-border: hsl(260, 15%, 25%); /* Actualizado con tinte morado */
+  --sidebar-ring: hsl(260, 40%, 45%); /* Morado ajustado para modo oscuro */
+  --sidebar: hsl(260, 15%, 15%); /* Actualizado con tinte morado */
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+
+    body {
+        @apply bg-background text-foreground;
+    }
+}
+
+/*
+  ---break---
+*/
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
