@@ -15,13 +15,18 @@ const mainNavItems: NavItem[] = [
         icon: LayoutGrid,
     },
     {
+        title: 'Tipos de Anfitriones',
+        href: '/host-types',
+        icon: Folder,
+    },
+    {
         title: 'Tipos de Eventos',
         href: '/event-types',
         icon: Folder,
     },
     {
         title: 'Eventos',
-        href: '/Event',
+        href: '/events',
         icon: CalendarCheck2,
     },
 ];
