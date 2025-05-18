@@ -19,6 +19,7 @@ class RoleSeeder extends Seeder
 
         // Crear rol de usuario si no existe
         $userRole = Role::firstOrCreate(['name' => 'user']);
+        $securityRole = Role::firstOrCreate(['name' => 'security']);
 
         // Aquí puedes agregar permisos específicos y asignarlos a los roles
         // Por ejemplo:

@@ -11,6 +11,15 @@
                     @search="handleSearch"
                     @clear="handleClearSearch"
                 />
+                <!-- Botón para descargar todos los QR -->
+                <button
+                    @click="downloadAllQR"
+                    class="cursor-pointer bg-forest hover:bg-forest/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors flex items-center gap-2"
+                    :disabled="!guestList.length"
+                >
+                    <Download class="h-4 w-4" />
+                    <span>Descargar todos los QR</span>
+                </button>
                 <button
                     @click="openCreateModal"
                     class="cursor-pointer bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors"
@@ -167,6 +176,8 @@ import GuestForm from './GuestForm.vue';
 import { Users, Download } from 'lucide-vue-next';
 import QRCode from 'qrcode.vue';
 import QrButton from '@/components/QrButton.vue';
+import JSZip from 'jszip';
+import QRCodeGenerator from 'qrcode';
 
 interface Guest {
     id: number;
@@ -197,6 +208,7 @@ interface Props {
     guests: PaginatedData;
     event: {
         capacity: number;
+        name: string;
     };
     filters?: {
         search: string;
@@ -342,5 +354,71 @@ const deleteGuest = () => {
             showToast('Invitado eliminado exitosamente', 'success');
         },
     });
+};
+
+// Función para descargar todos los QR
+const downloadAllQR = async () => {
+    try {
+        const response = await fetch(route('guests.download-all-qr', props.eventId));
+        if (!response.ok) {
+            throw new Error('Error al obtener los datos de los invitados');
+        }
+
+        const guests = await response.json();
+        const zip = new JSZip();
+
+        // Generar QR para cada invitado
+        for (const guest of guests) {
+            try {
+                // Generar QR como data URL
+                const qrDataUrl = await QRCodeGenerator.toDataURL(guest.qr_code, {
+                    width: 300,
+                    errorCorrectionLevel: 'H',
+                    margin: 1,
+                });
+
+                // Convertir data URL a binary
+                const imageData = qrDataUrl.split(',')[1];
+                const binaryData = atob(imageData);
+                const array = new Uint8Array(binaryData.length);
+                for (let i = 0; i < binaryData.length; i++) {
+                    array[i] = binaryData.charCodeAt(i);
+                }
+
+                // Añadir al ZIP
+                zip.file(`${guest.file_name}.png`, array, { binary: true });
+            } catch (error) {
+                console.error(`Error generando QR para ${guest.file_name}:`, error);
+            }
+        }
+
+        // Generar y descargar el ZIP
+        const content = await zip.generateAsync({ type: 'blob' });
+        const url = window.URL.createObjectURL(content);
+        const link = document.createElement('a');
+        link.href = url;
+                // Formatear el nombre del evento para el archivo (eliminar caracteres especiales y espacios)
+        const eventName = (props.event?.name || `evento-${props.eventId}`).toLowerCase()
+            .replace(/[áäàâã]/g, 'a')
+            .replace(/[éëèê]/g, 'e')
+            .replace(/[íïìî]/g, 'i')
+            .replace(/[óöòôõ]/g, 'o')
+            .replace(/[úüùû]/g, 'u')
+            .replace(/ñ/g, 'n')
+            .replace(/[^a-z0-9]/g, '-')
+            .replace(/-+/g, '-')
+            .replace(/^-|-$/g, '');
+
+        link.download = `qr-codes-${eventName}.zip`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+
+        showToast('Códigos QR descargados exitosamente', 'success');
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Error al descargar los códigos QR', 'error');
+    }
 };
 </script>

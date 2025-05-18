@@ -12,6 +12,7 @@ use App\Http\Controllers\HostController;
 use App\Http\Controllers\TimeController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\GuestController;
+use App\Http\Controllers\SecurityController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -56,7 +57,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/events/{event}/guests', [GuestController::class, 'store'])->name('guests.store');
     Route::put('/guests/{guest}', [GuestController::class, 'update'])->name('guests.update');
     Route::delete('/guests/{guest}', [GuestController::class, 'destroy'])->name('guests.destroy');
-}); 
+    Route::get('/events/{event}/guests/download-qr', [GuestController::class, 'downloadAllQR'])->name('guests.download-all-qr');
+
+    // Rutas para gestión de personal de seguridad
+    Route::resource('security', SecurityController::class);
+});
 
 // Rutas públicas para verificación de QR y acceso
 Route::get('/guest/verify/{qr_code}', [GuestController::class, 'verifyAccess'])->name('guest.verify');

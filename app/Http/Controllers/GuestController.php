@@ -8,6 +8,9 @@ use App\Http\Requests\GuestRequest;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use Illuminate\Support\Str;
+use Illuminate\Support\Facades\Storage;
+use ZipArchive;
+use SimpleSoftwareIO\QrCode\Facades\QrCode;
 
 class GuestController extends Controller
 {
@@ -150,5 +153,20 @@ class GuestController extends Controller
                 'error' => $e->getMessage()
             ], 422);
         }
+    }
+
+    public function downloadAllQR(Event $event)
+    {
+        $guests = $event->guests()
+            ->select('id', 'first_name', 'last_name', 'dni', 'qr_code')
+            ->get()
+            ->map(function ($guest) {
+                return [
+                    'qr_code' => $guest->qr_code,
+                    'file_name' => $guest->dni . '-' . $guest->first_name . '-' . $guest->last_name,
+                ];
+            });
+
+        return response()->json($guests);
     }
 }

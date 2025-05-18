@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Spatie\Permission\Traits\HasRoles;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class User extends Authenticatable
 {
@@ -78,5 +79,13 @@ class User extends Authenticatable
     public function getEmailForPasswordReset()
     {
         return $this->dni;
+    }
+
+    // Relación con eventos a través de event_security
+    public function events(): BelongsToMany
+    {
+        return $this->belongsToMany(Event::class, 'event_security')
+            ->withPivot('active')
+            ->withTimestamps();
     }
 }

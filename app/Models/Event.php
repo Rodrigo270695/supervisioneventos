@@ -7,6 +7,7 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 
 class Event extends Model
 {
@@ -70,5 +71,19 @@ class Event extends Model
     public function guests(): HasMany
     {
         return $this->hasMany(Guest::class);
+    }
+
+    // Relación con el personal de seguridad
+    public function security(): HasMany
+    {
+        return $this->hasMany(EventSecurity::class);
+    }
+
+    // Relación con los usuarios de seguridad a través de event_security
+    public function securityUsers(): BelongsToMany
+    {
+        return $this->belongsToMany(User::class, 'event_security')
+            ->withPivot('active')
+            ->withTimestamps();
     }
 }

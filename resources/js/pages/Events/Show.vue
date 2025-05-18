@@ -280,12 +280,13 @@ function refreshGuests() {
                         :event-id="event.id"
                         :guests="guests"
                         :event="{
-                            capacity: event.capacity
+                            capacity: event.capacity,
+                            name: event.name
                         }"
                         :filters="filters"
                         @guest-updated="refreshGuests"
                     />
-                </div>
+                        </div>
 
                 <!-- Notas -->
                 <div v-if="activeTab === 'notes'" class="animate-in fade-in duration-200">
