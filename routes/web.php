@@ -6,6 +6,12 @@ use App\Http\Controllers\ChatbotController;
 use App\Http\Controllers\EventTypeController;
 use App\Http\Controllers\EventController;
 use App\Http\Controllers\HostTypeController;
+use App\Http\Controllers\TimeTypeController;
+use App\Http\Controllers\PlanTypeController;
+use App\Http\Controllers\HostController;
+use App\Http\Controllers\TimeController;
+use App\Http\Controllers\NoteController;
+use App\Http\Controllers\GuestController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -27,7 +33,34 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rutas para tipos de anfitrión
     Route::resource('host-types', HostTypeController::class);
-});
+
+    // Rutas para tipos de tiempo
+    Route::resource('time-types', TimeTypeController::class);
+
+    // Rutas para tipos de plano
+    Route::resource('plan-types', PlanTypeController::class);
+
+    // Rutas para anfitriones
+    Route::post('/hosts', [HostController::class, 'store'])->name('hosts.store');
+    Route::put('/hosts/{host}', [HostController::class, 'update'])->name('hosts.update');
+    Route::delete('/hosts/{host}', [HostController::class, 'destroy'])->name('hosts.destroy');
+
+    // Rutas para tiempos
+    Route::resource('times', TimeController::class)->only(['store', 'update', 'destroy']);
+
+    // Rutas para notas
+    Route::resource('notes', NoteController::class)->only(['store', 'update', 'destroy']);
+
+    // Rutas para invitados
+    Route::get('/events/{event}/guests', [GuestController::class, 'index'])->name('guests.index');
+    Route::post('/events/{event}/guests', [GuestController::class, 'store'])->name('guests.store');
+    Route::put('/guests/{guest}', [GuestController::class, 'update'])->name('guests.update');
+    Route::delete('/guests/{guest}', [GuestController::class, 'destroy'])->name('guests.destroy');
+}); 
+
+// Rutas públicas para verificación de QR y acceso
+Route::get('/guest/verify/{qr_code}', [GuestController::class, 'verifyAccess'])->name('guest.verify');
+Route::post('/guest/{guest}/access', [GuestController::class, 'registerAccess'])->name('guest.access');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

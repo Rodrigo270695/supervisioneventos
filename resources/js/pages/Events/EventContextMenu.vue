@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { Edit, Eye, Users, Calendar, Map, UserPlus } from 'lucide-vue-next';
+import { Edit, Eye, Users, Calendar, Map, UserPlus, Clock, FileText } from 'lucide-vue-next';
 import { ref, defineProps, defineEmits, onMounted, onUnmounted, watch } from 'vue';
 
 interface Event {
@@ -73,7 +73,7 @@ const handleView = () => {
         :style="{
             left: `${position.x}px`,
             top: `${position.y}px`,
-            transform: 'translateX(-50%)'
+            transform: 'translate(-50%, -55%)'
         }"
     >
         <div class="py-1">
@@ -104,11 +104,11 @@ const handleView = () => {
             </a>
 
             <a
-                :href="event ? route('events.show', event.id) + '#schedule' : ''"
+                :href="event ? route('events.show', event.id) + '#times' : ''"
                 class="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted text-left cursor-pointer"
             >
-                <Calendar class="h-4 w-4" />
-                <span>Configurar Agenda</span>
+                <Clock class="h-4 w-4" />
+                <span>Gestionar Tiempos</span>
             </a>
 
             <a
@@ -125,6 +125,14 @@ const handleView = () => {
             >
                 <UserPlus class="h-4 w-4" />
                 <span>Administrar Invitados</span>
+            </a>
+
+            <a
+                :href="event ? route('events.show', event.id) + '#notes' : ''"
+                class="w-full flex items-center gap-2 px-4 py-2 text-sm hover:bg-muted text-left cursor-pointer"
+            >
+                <FileText class="h-4 w-4" />
+                <span>Gestionar Notas</span>
             </a>
         </div>
     </div>

@@ -223,8 +223,8 @@ const calendarOptions = {
 
             // Calcular posición del popup
             previewPosition.value = {
-                top: `${rect.bottom + window.scrollY + 10}px`,
-                left: `${rect.left + window.scrollX}px`
+                top: `${rect.bottom + 8}px`,
+                left: `${rect.left + (rect.width / 2)}px`
             };
 
             showPreviewPopup.value = true;
@@ -247,7 +247,7 @@ const calendarOptions = {
             const rect = info.el.getBoundingClientRect();
             const position = {
                 x: rect.left + window.scrollX + rect.width / 2,
-                y: rect.bottom + window.scrollY
+                y: rect.top + window.scrollY + rect.height
             };
 
             // Mostrar menú contextual

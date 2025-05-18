@@ -1,11 +1,18 @@
 <script setup lang="ts">
-import { Head, Link, router } from '@inertiajs/vue3';
+import { Head, router } from '@inertiajs/vue3';
 import { ref, onMounted, watch, computed } from 'vue';
 import AppLayout from '@/layouts/AppLayout.vue';
-import { Calendar, Clock, MapPin, Users, CalendarDays, UserPlus, Pencil, Map, LayoutGrid, ArrowLeft } from 'lucide-vue-next';
+import { Calendar, Clock, MapPin, Users, CalendarDays, UserPlus, Pencil, Map, LayoutGrid, ArrowLeft, FileText } from 'lucide-vue-next';
 import { type BreadcrumbItem } from '@/types';
 import Modal from '@/components/Modal.vue';
 import EventForm from '../Events/EventForm.vue';
+import HostList from './partials/HostList.vue';
+import TimeList from './partials/TimeList.vue';
+import NoteList from './partials/NoteList.vue';
+import GuestList from './partials/GuestList.vue';
+import TabNavigation from '@/components/TabNavigation.vue';
+import EventInfo from './components/EventInfo.vue';
+import EventHeader from './components/EventHeader.vue';
 
 interface EventType {
     id: number;
@@ -17,6 +24,29 @@ interface HostType {
     id: number;
     name: string;
     description: string | null;
+}
+
+interface TimeType {
+    id: number;
+    name: string;
+    description: string | null;
+}
+
+interface Time {
+    id: number;
+    event_id: number;
+    time_type_id: number;
+    start_time: string;
+    end_time: string | null;
+    description: string | null;
+    timeType: TimeType;
+}
+
+interface Note {
+    id: number;
+    event_id: number;
+    description: string;
+    amount: number;
 }
 
 interface Event {
@@ -33,10 +63,56 @@ interface Event {
     eventType?: EventType;
 }
 
+interface Host {
+    id: number;
+    event_id: number;
+    host_type_id: number;
+    nombres: string;
+    apellidos: string;
+    dni: string;
+    edad: number;
+    correo: string;
+    full_name: string;
+    hostType: HostType;
+}
+
+interface Guest {
+    id: number;
+    event_id: number;
+    first_name: string;
+    last_name: string;
+    dni: string;
+    table_number: number;
+    passes: number;
+    used_passes: number;
+    qr_code: string;
+    full_name: string;
+    remaining_passes: number;
+}
+
+interface PaginatedGuests {
+    data: Guest[];
+    links: { url: string | null; label: string; active: boolean }[];
+    total: number;
+    from: number;
+    to: number;
+    current_page: number;
+    last_page: number;
+    per_page: number;
+}
+
 interface Props {
     event: Event;
     hostTypes: HostType[];
     eventTypes?: EventType[]; // Añadir tipos de evento para el formulario
+    hosts: Host[]; // Lista de anfitriones del evento
+    times: Time[];
+    timeTypes: TimeType[];
+    notes: Note[]; // Lista de notas del evento
+    guests: PaginatedGuests; // Lista paginada de invitados del evento
+    filters?: {
+        search: string;
+    };
 }
 
 const props = defineProps<Props>();
@@ -62,61 +138,24 @@ const breadcrumbs: BreadcrumbItem[] = [
 
 // Estado para la pestaña activa
 const activeTab = ref('info');
-const tabIdMap = {
-    'info': 'info',
-    'hosts': 'hosts',
-    'schedule': 'schedule',
-    'layout': 'layout',
-    'guests': 'guests'
-};
+
+// Configuración de las pestañas
+const tabs = [
+    { id: 'info', label: 'Información' },
+    { id: 'hosts', label: 'Anfitriones' },
+    { id: 'times', label: 'Tiempos' },
+    { id: 'layout', label: 'Planos' },
+    { id: 'guests', label: 'Invitados' },
+    { id: 'notes', label: 'Notas' }
+];
 
 // Cargar la pestaña activa desde el hash al cargar la página
 onMounted(() => {
     const hash = window.location.hash.substring(1);
-    if (hash && tabIdMap[hash as keyof typeof tabIdMap]) {
+    if (hash && tabs.some(tab => tab.id === hash)) {
         activeTab.value = hash;
     }
 });
-
-// Formatear la fecha del evento
-const formattedDate = computed(() => {
-    if (!props.event.event_date) return '';
-
-    const eventDate = new Date(props.event.event_date);
-    return eventDate.toLocaleDateString('es-ES', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    });
-});
-
-// Formatear horario
-const formattedTime = computed(() => {
-    if (!props.event.start_time) return '';
-
-    let timeStr = props.event.start_time;
-    if (props.event.end_time) {
-        timeStr += ` - ${props.event.end_time}`;
-    }
-    return timeStr;
-});
-
-// Color de fondo para el indicador de estado
-const statusColors = {
-    scheduled: 'bg-blue-500 dark:bg-blue-600',
-    in_progress: 'bg-amber-500 dark:bg-amber-600',
-    completed: 'bg-green-500 dark:bg-green-600',
-    cancelled: 'bg-red-500 dark:bg-red-600'
-};
-
-// Texto para el estado
-const statusText = {
-    scheduled: 'Programado',
-    in_progress: 'En Progreso',
-    completed: 'Completado',
-    cancelled: 'Cancelado'
-};
 
 // Función para cambiar de pestaña
 function changeTab(tab: string) {
@@ -140,6 +179,26 @@ function handleSuccess() {
     closeModal();
     router.reload();
 }
+
+// Refrescar lista de anfitriones
+function refreshHosts() {
+    router.reload({ only: ['hosts'] });
+}
+
+// Refrescar lista de tiempos
+function refreshTimes() {
+    router.reload({ only: ['times'] });
+}
+
+// Refrescar lista de notas
+function refreshNotes() {
+    router.reload({ only: ['notes'] });
+}
+
+// Refrescar lista de invitados
+function refreshGuests() {
+    router.reload({ only: ['guests'] });
+}
 </script>
 
 <template>
@@ -148,239 +207,45 @@ function handleSuccess() {
     <AppLayout :breadcrumbs="breadcrumbs">
         <div class="rounded-xl p-2 sm:p-4 md:p-6">
             <!-- Cabecera con información básica y acciones -->
-            <div class="mb-6 flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-                <div>
-                    <div class="flex items-center gap-2">
-                        <h1 class="text-xl font-bold tracking-tight text-foreground md:text-2xl lg:text-3xl">{{ event.name }}</h1>
-
-                        <!-- Badge de tipo de evento -->
-                        <span
-                            v-if="event.eventType"
-                            class="text-xs rounded-full px-2.5 py-0.5 font-medium"
-                            :style="{
-                                backgroundColor: `${event.eventType.color}20`,
-                                color: event.eventType.color
-                            }"
-                        >
-                            {{ event.eventType.name }}
-                        </span>
-                    </div>
-
-                    <!-- Indicador de estado -->
-                    <div class="mt-2 flex items-center gap-2">
-                        <span
-                            class="inline-flex h-2.5 w-2.5 rounded-full"
-                            :class="statusColors[event.status]"
-                        ></span>
-                        <span class="text-sm text-muted-foreground">{{ statusText[event.status] }}</span>
-                    </div>
-                </div>
-
-                <div class="flex gap-2">
-                    <Link
-                        href="/events"
-                        class="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                    >
-                        <ArrowLeft class="h-3.5 w-3.5" />
-                        <span>Volver</span>
-                    </Link>
-                    <button
-                        @click="editEvent"
-                        class="inline-flex items-center gap-1 rounded-md border border-border bg-background px-3 py-1.5 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                    >
-                        <Pencil class="h-3.5 w-3.5" />
-                        <span>Editar</span>
-                    </button>
-                </div>
-            </div>
+            <EventHeader
+                :event="event"
+                :on-edit="editEvent"
+            />
 
             <!-- Navegación por pestañas -->
-            <div class="border-b border-border">
-                <nav class="flex space-x-4 overflow-x-auto">
-                    <button
-                        @click="changeTab('info')"
-                        class="px-3 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer"
-                        :class="activeTab === 'info' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'"
-                    >
-                        Información
-                    </button>
-                    <button
-                        @click="changeTab('hosts')"
-                        class="px-3 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer"
-                        :class="activeTab === 'hosts' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'"
-                        id="hosts"
-                    >
-                        Anfitriones
-                    </button>
-                    <button
-                        @click="changeTab('schedule')"
-                        class="px-3 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer"
-                        :class="activeTab === 'schedule' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'"
-                        id="schedule"
-                    >
-                        Agenda
-                    </button>
-                    <button
-                        @click="changeTab('layout')"
-                        class="px-3 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer"
-                        :class="activeTab === 'layout' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'"
-                        id="layout"
-                    >
-                        Planos
-                    </button>
-                    <button
-                        @click="changeTab('guests')"
-                        class="px-3 py-2 text-sm font-medium border-b-2 transition-colors cursor-pointer"
-                        :class="activeTab === 'guests' ? 'border-primary text-foreground' : 'border-transparent text-muted-foreground hover:border-border hover:text-foreground'"
-                        id="guests"
-                    >
-                        Invitados
-                    </button>
-                </nav>
-            </div>
+            <TabNavigation
+                :active-tab="activeTab"
+                :tabs="tabs"
+                @change="changeTab"
+            />
 
             <!-- Contenido de las pestañas -->
             <div class="mt-6">
                 <!-- Información general -->
-                <div v-if="activeTab === 'info'" class="animate-in fade-in duration-200">
-                    <div class="grid grid-cols-1 gap-6 md:grid-cols-3">
-                        <!-- Panel con detalles del evento -->
-                        <div class="bg-card dark:bg-card/90 rounded-lg shadow-sm border border-border/40 p-5 col-span-2">
-                            <h2 class="text-lg font-medium mb-4">Detalles del evento</h2>
-
-                            <div class="space-y-4">
-                                <div class="flex items-start gap-3">
-                                    <CalendarDays class="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <p class="text-sm text-muted-foreground">Fecha</p>
-                                        <p class="font-medium">{{ formattedDate }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-3">
-                                    <Clock class="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <p class="text-sm text-muted-foreground">Horario</p>
-                                        <p class="font-medium">{{ formattedTime }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-3">
-                                    <MapPin class="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <p class="text-sm text-muted-foreground">Ubicación</p>
-                                        <p class="font-medium">{{ event.address }}</p>
-                                    </div>
-                                </div>
-
-                                <div class="flex items-start gap-3">
-                                    <Users class="h-5 w-5 text-primary mt-0.5" />
-                                    <div>
-                                        <p class="text-sm text-muted-foreground">Capacidad</p>
-                                        <p class="font-medium">{{ event.capacity }} personas</p>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <div class="mt-6 pt-5 border-t border-border/40">
-                                <h3 class="text-base font-medium mb-3">Descripción</h3>
-                                <p class="text-muted-foreground" v-if="event.description">{{ event.description }}</p>
-                                <p class="text-muted-foreground italic" v-else>No hay descripción disponible</p>
-                            </div>
-                        </div>
-
-                        <!-- Panel lateral con accesos rápidos -->
-                        <div class="space-y-4">
-                            <div class="bg-card dark:bg-card/90 rounded-lg shadow-sm border border-border/40 p-5">
-                                <h3 class="text-base font-medium mb-3">Acciones rápidas</h3>
-                                <div class="space-y-2">
-                                    <button
-                                        @click="changeTab('hosts')"
-                                        class="w-full flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                                    >
-                                        <Users class="h-4 w-4 text-primary" />
-                                        <span>Gestionar anfitriones</span>
-                                    </button>
-
-                                    <button
-                                        @click="changeTab('schedule')"
-                                        class="w-full flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                                    >
-                                        <Calendar class="h-4 w-4 text-primary" />
-                                        <span>Configurar agenda</span>
-                                    </button>
-
-                                    <button
-                                        @click="changeTab('layout')"
-                                        class="w-full flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                                    >
-                                        <LayoutGrid class="h-4 w-4 text-primary" />
-                                        <span>Diseñar planos</span>
-                                    </button>
-
-                                    <button
-                                        @click="changeTab('guests')"
-                                        class="w-full flex items-center gap-2 rounded-md border border-border bg-background px-3 py-2 text-sm font-medium text-foreground hover:bg-muted transition-colors"
-                                    >
-                                        <UserPlus class="h-4 w-4 text-primary" />
-                                        <span>Administrar invitados</span>
-                                    </button>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                <EventInfo
+                    v-if="activeTab === 'info'"
+                    :event="event"
+                    :on-tab-change="changeTab"
+                />
 
                 <!-- Anfitriones -->
                 <div v-if="activeTab === 'hosts'" class="animate-in fade-in duration-200">
-                    <div class="bg-card dark:bg-card/90 rounded-lg shadow-sm border border-border/40 p-5">
-                        <div class="flex justify-between items-center mb-5">
-                            <h2 class="text-lg font-medium">Anfitriones del evento</h2>
-                            <button class="bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Agregar anfitrión
-                            </button>
-                        </div>
-
-                        <!-- Lista de anfitriones (vacía inicialmente) -->
-                        <div class="py-10 flex flex-col items-center justify-center text-center">
-                            <div class="bg-primary/10 dark:bg-primary/5 p-3 rounded-full mb-3">
-                                <Users class="h-6 w-6 text-primary" />
-                            </div>
-                            <h3 class="text-lg font-medium mb-1">Sin anfitriones</h3>
-                            <p class="text-muted-foreground text-sm max-w-md">
-                                Este evento aún no tiene anfitriones asignados. Agrega anfitriones para definir quiénes están a cargo de este evento.
-                            </p>
-                            <button class="mt-4 bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Agregar primer anfitrión
-                            </button>
-                        </div>
-                    </div>
+                    <HostList
+                        :event-id="event.id"
+                        :hosts="hosts"
+                        :host-types="hostTypes"
+                        @host-updated="refreshHosts"
+                    />
                 </div>
 
-                <!-- Agenda -->
-                <div v-if="activeTab === 'schedule'" class="animate-in fade-in duration-200">
-                    <div class="bg-card dark:bg-card/90 rounded-lg shadow-sm border border-border/40 p-5">
-                        <div class="flex justify-between items-center mb-5">
-                            <h2 class="text-lg font-medium">Configuración de agenda</h2>
-                            <button class="bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Agregar actividad
-                            </button>
-                        </div>
-
-                        <!-- Lista de actividades (vacía inicialmente) -->
-                        <div class="py-10 flex flex-col items-center justify-center text-center">
-                            <div class="bg-primary/10 dark:bg-primary/5 p-3 rounded-full mb-3">
-                                <Calendar class="h-6 w-6 text-primary" />
-                            </div>
-                            <h3 class="text-lg font-medium mb-1">Sin actividades programadas</h3>
-                            <p class="text-muted-foreground text-sm max-w-md">
-                                Este evento aún no tiene actividades programadas. Agrega actividades para definir un cronograma detallado.
-                            </p>
-                            <button class="mt-4 bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Agregar primera actividad
-                            </button>
-                        </div>
-                    </div>
+                <!-- Tiempos -->
+                <div v-if="activeTab === 'times'" class="animate-in fade-in duration-200">
+                    <TimeList
+                        :event-id="event.id"
+                        :times="times"
+                        :time-types="timeTypes"
+                        @timeUpdated="refreshTimes"
+                    />
                 </div>
 
                 <!-- Planos -->
@@ -411,28 +276,24 @@ function handleSuccess() {
 
                 <!-- Invitados -->
                 <div v-if="activeTab === 'guests'" class="animate-in fade-in duration-200">
-                    <div class="bg-card dark:bg-card/90 rounded-lg shadow-sm border border-border/40 p-5">
-                        <div class="flex justify-between items-center mb-5">
-                            <h2 class="text-lg font-medium">Administración de invitados</h2>
-                            <button class="bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Agregar invitado
-                            </button>
-                        </div>
+                    <GuestList
+                        :event-id="event.id"
+                        :guests="guests"
+                        :event="{
+                            capacity: event.capacity
+                        }"
+                        :filters="filters"
+                        @guest-updated="refreshGuests"
+                    />
+                </div>
 
-                        <!-- Lista de invitados (vacía inicialmente) -->
-                        <div class="py-10 flex flex-col items-center justify-center text-center">
-                            <div class="bg-primary/10 dark:bg-primary/5 p-3 rounded-full mb-3">
-                                <UserPlus class="h-6 w-6 text-primary" />
-                            </div>
-                            <h3 class="text-lg font-medium mb-1">Sin invitados</h3>
-                            <p class="text-muted-foreground text-sm max-w-md">
-                                Este evento aún no tiene invitados registrados. Agrega invitados para llevar un control de asistencia.
-                            </p>
-                            <button class="mt-4 bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Agregar primer invitado
-                            </button>
-                        </div>
-                    </div>
+                <!-- Notas -->
+                <div v-if="activeTab === 'notes'" class="animate-in fade-in duration-200">
+                    <NoteList
+                        :event-id="event.id"
+                        :notes="notes"
+                        @noteUpdated="refreshNotes"
+                    />
                 </div>
             </div>
         </div>

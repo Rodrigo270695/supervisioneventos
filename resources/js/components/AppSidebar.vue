@@ -5,7 +5,7 @@ import NavUser from '@/components/NavUser.vue';
 import { Sidebar, SidebarContent, SidebarFooter, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem } from '@/components/ui/sidebar';
 import { type NavItem } from '@/types';
 import { Link } from '@inertiajs/vue3';
-import { BookOpen, Folder, LayoutGrid, CalendarCheck2 } from 'lucide-vue-next';
+import { BookOpen, Folder, LayoutGrid, CalendarCheck2, Clock } from 'lucide-vue-next';
 import AppLogo from './AppLogo.vue';
 
 const mainNavItems: NavItem[] = [
@@ -18,6 +18,16 @@ const mainNavItems: NavItem[] = [
         title: 'Tipos de Anfitriones',
         href: '/host-types',
         icon: Folder,
+    },
+    {
+        title: 'Tipos de Tiempo',
+        href: '/time-types',
+        icon: Clock,
+    },
+    {
+        title: 'Tipos de Planos',
+        href: '/plan-types',
+        icon: LayoutGrid,
     },
     {
         title: 'Tipos de Eventos',
