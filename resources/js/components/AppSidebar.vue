@@ -62,6 +62,12 @@ const allNavItems: NavItem[] = [
         icon: CheckCircle,
         roles: ['admin', 'security'] // Accesible para ambos roles
     },
+    {
+        title: 'Reportes de Acceso',
+        href: '/reports/access',
+        icon: BookOpen,
+        roles: ['admin'] // Solo accesible para admin
+    },
 ];
 
 // Filtrar los elementos del menú según el rol del usuario

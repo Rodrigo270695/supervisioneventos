@@ -16,6 +16,7 @@
         "laravel/sanctum": "^4.1",
         "laravel/tinker": "^2.10.1",
         "laraveles/spanish": "^1.5",
+        "maatwebsite/excel": "^3.1",
         "simplesoftwareio/simple-qrcode": "*",
         "spatie/laravel-permission": "^6.18",
         "tightenco/ziggy": "^2.4"

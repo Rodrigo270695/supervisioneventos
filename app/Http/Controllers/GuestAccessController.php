@@ -137,7 +137,7 @@ class GuestAccessController extends Controller
                 'guest_id' => $guest->id,
                 'event_id' => $guest->event_id,
                 'people_count' => $request->people_count,
-                'access_datetime' => now(),
+                'access_datetime' => now()->setTimezone('America/Lima'),
                 'access_type' => $request->access_type,
                 'observations' => $request->observations
             ]);
@@ -145,7 +145,7 @@ class GuestAccessController extends Controller
             // Actualizar los pases utilizados
             if ($request->access_type === 'entry') {
                 $guest->used_passes += $request->people_count;
-                $guest->last_access = now();
+                $guest->last_access = now()->setTimezone('America/Lima');
                 $guest->save();
             }
 

@@ -14,6 +14,7 @@ use App\Http\Controllers\NoteController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\GuestAccessController;
+use App\Http\Controllers\AccessReportController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -78,6 +79,12 @@ Route::middleware(['auth'])->group(function () {
 Route::post('/api/guest-accesses/validate', [GuestAccessController::class, 'validateAccess'])
     ->middleware(['auth'])
     ->name('guest-accesses.validate');
+
+// Rutas para reportes de acceso
+Route::middleware(['auth'])->group(function () {
+    Route::get('/reports/access', [AccessReportController::class, 'index'])->name('reports.access');
+    Route::get('/reports/access/{event}/export', [AccessReportController::class, 'export'])->name('reports.access.export');
+});
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';
