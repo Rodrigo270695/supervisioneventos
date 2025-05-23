@@ -3,12 +3,14 @@
 namespace App\Http\Requests;
 
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Carbon;
+use Illuminate\Support\Facades\Auth;
 
 class EventRequest extends FormRequest
 {
     public function authorize(): bool
     {
-        return true;
+        return Auth::check();
     }
 
     public function rules(): array
@@ -19,7 +21,29 @@ class EventRequest extends FormRequest
             'capacity' => ['required', 'integer', 'min:1'],
             'event_date' => ['required', 'date'],
             'start_time' => ['required', 'date_format:H:i'],
-            'end_time' => ['nullable', 'date_format:H:i', 'after:start_time'],
+            'end_time' => [
+                'nullable',
+                'date_format:H:i',
+                function ($attribute, $value, $fail) {
+                    if (!$value) return;
+
+                    $startTime = Carbon::createFromFormat('H:i', $this->input('start_time'));
+                    $endTime = Carbon::createFromFormat('H:i', $value);
+
+                    // Si la hora de fin es menor que la hora de inicio, asumimos que es del día siguiente
+                    if ($endTime->lt($startTime)) {
+                        $endTime->addDay();
+                    }
+
+                    // Calculamos la duración en horas
+                    $duration = $startTime->diffInHours($endTime);
+
+                    // Validamos que la duración no sea mayor a 24 horas
+                    if ($duration > 24) {
+                        $fail('La duración del evento no puede ser mayor a 24 horas.');
+                    }
+                }
+            ],
             'address' => ['required', 'string', 'max:255'],
             'description' => ['nullable', 'string', 'max:500'],
             'status' => ['required', 'in:scheduled,in_progress,completed,cancelled'],
@@ -42,7 +66,6 @@ class EventRequest extends FormRequest
             'start_time.required' => 'La hora de inicio es obligatoria.',
             'start_time.date_format' => 'La hora de inicio debe tener el formato HH:MM.',
             'end_time.date_format' => 'La hora de fin debe tener el formato HH:MM.',
-            'end_time.after' => 'La hora de fin debe ser posterior a la hora de inicio.',
             'address.required' => 'La dirección es obligatoria.',
             'address.max' => 'La dirección no puede tener más de 255 caracteres.',
             'description.max' => 'La descripción no puede tener más de 500 caracteres.',

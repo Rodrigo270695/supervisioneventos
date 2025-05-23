@@ -3,17 +3,33 @@ import { Head } from '@inertiajs/vue3';
 import { ref, onMounted, computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Send, MessageSquare, ChevronRight, Calendar, Clock, MapPin, User, ArrowLeft, ThumbsUp, ThumbsDown, Menu, X } from 'lucide-vue-next';
+import { Send, MessageSquare, ChevronRight, Calendar, Clock, MapPin, User, ArrowLeft, ThumbsUp, ThumbsDown, Menu, X, Users, CreditCard, LogOut } from 'lucide-vue-next';
 
 // Props que recibimos del controlador
 const props = defineProps<{
-    welcomeMessage?: string;
+    welcomeMessage: string;
     eventInfo: {
         name: string;
         date: string;
         time: string;
         location: string;
         table: string;
+        description?: string;
+        passes: {
+            total: number;
+            used: number;
+            available: number;
+        };
+    };
+    guest: {
+        name: string;
+        dni: string;
+        tableNumber: number;
+        passes: {
+            total: number;
+            used: number;
+            available: number;
+        };
     };
     qrData?: string;
 }>();
@@ -24,6 +40,9 @@ const userInput = ref('');
 const chatContainer = ref<HTMLElement | null>(null);
 const isTyping = ref(false);
 const showSidebar = ref(false);
+
+// Estado para el menú de salir
+const showLogoutMenu = ref(false);
 
 // Posibles respuestas predefinidas para simular el chatbot
 const botResponses = {
@@ -92,6 +111,9 @@ onMounted(() => {
     setTimeout(() => {
         addMessage('tip', randomTip.value);
     }, 3000);
+
+    // Agregar y remover el event listener cuando el menú está abierto
+    document.addEventListener('click', closeLogoutMenu);
 });
 
 // Función para añadir un nuevo mensaje al chat
@@ -179,6 +201,47 @@ const handleQuickOption = (query: string) => {
 const toggleSidebar = () => {
     showSidebar.value = !showSidebar.value;
 };
+
+// Función para manejar el cierre de sesión
+const handleLogout = () => {
+    window.location.href = route('login');
+};
+
+// Función para alternar el menú de salir
+const toggleLogoutMenu = () => {
+    showLogoutMenu.value = !showLogoutMenu.value;
+};
+
+// Cerrar el menú si se hace clic fuera
+const closeLogoutMenu = (event: Event) => {
+    const target = event.target as HTMLElement;
+    if (!target.closest('.logout-menu') && !target.closest('.logout-button')) {
+        showLogoutMenu.value = false;
+    }
+};
+
+// Función para formatear la hora de 24h a 12h
+const formatTime = (time24h: string) => {
+    const [hours, minutes] = time24h.split(':');
+    const hour = parseInt(hours);
+    const ampm = hour >= 12 ? 'PM' : 'AM';
+    const hour12 = hour % 12 || 12;
+    return `${hour12}:${minutes} ${ampm}`;
+};
+
+// Función para formatear el rango de horas
+const formatTimeRange = computed(() => {
+    const startFormatted = formatTime(props.eventInfo.time.split(' - ')[0]);
+    let endFormatted = '';
+
+    if (props.eventInfo.time.includes(' - ')) {
+        endFormatted = formatTime(props.eventInfo.time.split(' - ')[1]);
+        return `${startFormatted} - ${endFormatted}`;
+    }
+
+    // Si solo hay hora de inicio
+    return startFormatted;
+});
 </script>
 
 <template>
@@ -201,10 +264,43 @@ const toggleSidebar = () => {
                         <h1 class="font-bold text-lg text-neutral-dark dark:text-white">{{ eventInfo.name }}</h1>
                     </div>
                 </div>
-                <div>
-                    <span class="inline-block py-1 px-3 text-xs font-medium bg-purple/10 text-purple rounded-full dark:bg-purple/20 dark:text-purple-light">
-                        Invitado
-                    </span>
+                <!-- Perfil del usuario con menú desplegable -->
+                <div class="relative">
+                    <button
+                        @click="toggleLogoutMenu"
+                        class="logout-button flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-neutral-light/50 dark:hover:bg-neutral-dark/50 transition-colors cursor-pointer group"
+                    >
+                        <div class="h-7 w-7 rounded-full bg-navy/10 dark:bg-navy/20 flex items-center justify-center group-hover:bg-navy/20 dark:group-hover:bg-navy/30 transition-colors">
+                            <User class="h-4 w-4 text-navy dark:text-navy-light" />
+                        </div>
+                        <span class="text-sm font-medium text-neutral-dark dark:text-white">
+                            {{ guest.name }}
+                        </span>
+                        <ChevronRight
+                            class="h-4 w-4 text-neutral-medium dark:text-neutral-light/50 transition-transform duration-200"
+                            :class="{ 'rotate-90': showLogoutMenu }"
+                        />
+                    </button>
+
+                    <!-- Menú desplegable -->
+                    <div
+                        v-if="showLogoutMenu"
+                        class="logout-menu absolute right-0 top-full mt-2 w-56 rounded-lg bg-white dark:bg-neutral-dark/95 shadow-lg ring-1 ring-black/5 dark:ring-white/10 py-1 z-50"
+                    >
+                        <div class="px-4 py-3 border-b border-neutral-light/20 dark:border-neutral-dark/60">
+                            <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ guest.name }}</p>
+                            <p class="text-xs text-neutral-medium dark:text-neutral-light/70 mt-1">DNI: {{ guest.dni }}</p>
+                        </div>
+                        <div class="p-2">
+                            <button
+                                @click="handleLogout"
+                                class="cursor-pointer w-full text-left px-3 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-md transition-colors flex items-center gap-2"
+                            >
+                                <LogOut class="h-4 w-4" />
+                                Salir del chat
+                            </button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </header>
@@ -245,7 +341,7 @@ const toggleSidebar = () => {
                                 </div>
                                 <div>
                                     <p class="text-xs text-neutral-medium dark:text-neutral-light/50">Horario</p>
-                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.time }}</p>
+                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ formatTimeRange }}</p>
                                 </div>
                             </div>
 
@@ -261,11 +357,23 @@ const toggleSidebar = () => {
 
                             <div class="flex items-center gap-3">
                                 <div class="bg-purple/10 dark:bg-purple/20 p-2 rounded-full">
-                                    <User class="h-5 w-5 text-purple dark:text-purple-light" />
+                                    <Users class="h-5 w-5 text-purple dark:text-purple-light" />
                                 </div>
                                 <div>
                                     <p class="text-xs text-neutral-medium dark:text-neutral-light/50">Mesa asignada</p>
                                     <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.table }}</p>
+                                </div>
+                            </div>
+
+                            <div class="flex items-center gap-3">
+                                <div class="bg-navy/10 dark:bg-navy/20 p-2 rounded-full">
+                                    <CreditCard class="h-5 w-5 text-navy dark:text-navy-light" />
+                                </div>
+                                <div>
+                                    <p class="text-xs text-neutral-medium dark:text-neutral-light/50">Pases</p>
+                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">
+                                        {{ guest.passes.available }} disponible(s) de {{ guest.passes.total }} total(es)
+                                    </p>
                                 </div>
                             </div>
                         </div>

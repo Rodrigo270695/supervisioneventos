@@ -8,12 +8,17 @@ import { Label } from '@/components/ui/label';
 import AuthBase from '@/layouts/AuthLayout.vue';
 import { Head, useForm } from '@inertiajs/vue3';
 import { LoaderCircle, User, Lock, ArrowRight, QrCode, ScanLine, X } from 'lucide-vue-next';
-import { ref, onMounted } from 'vue';
-import { QrcodeStream } from 'vue-qrcode-reader';
+import { ref, onMounted, defineProps } from 'vue';
+import ChatbotQrScanner from '@/components/ChatbotQrScanner.vue';
+import ErrorModal from '@/components/ErrorModal.vue';
 
-defineProps<{
+const props = defineProps<{
     status?: string;
     canResetPassword: boolean;
+    error?: string;
+    showErrorModal?: boolean;
+    eventName?: string;
+    eventStatus?: string;
 }>();
 
 const form = useForm({
@@ -30,6 +35,7 @@ const showQrScanner = ref(false);
 const scanError = ref('');
 const cameraPermissionDenied = ref(false);
 const cameraLoading = ref(false);
+const showError = ref(props.showErrorModal || false);
 
 // Validación para input DNI - solo permitir números
 const onlyNumeric = (event: KeyboardEvent) => {
@@ -116,17 +122,19 @@ const scanQrCode = async () => {
 };
 
 const onDecode = (result) => {
-    // Al escanear el código QR, mostrar un breve mensaje de éxito
-    alert(`Código QR escaneado con éxito. Redirigiendo...`);
-    showQrScanner.value = false;
-
-    // Redirigir al chatbot, pasando el resultado del escaneo como parámetro
-    window.location.href = route('chatbot.show', { qr_data: result });
+    // Validar que el resultado del escaneo tenga el formato esperado
+    try {
+        // Redirigir al chatbot con los datos del QR
+        window.location.href = route('chatbot.show', {
+            qr_data: result
+        });
+    } catch (error) {
+        scanError.value = 'Código QR inválido. Por favor, intenta de nuevo.';
+    }
 };
 
 const onScanError = (error) => {
     cameraLoading.value = false;
-    console.error('Error de escaneo:', error);
 
     if (error && error.name === 'NotAllowedError') {
         cameraPermissionDenied.value = true;
@@ -140,6 +148,10 @@ const onScanError = (error) => {
 
 const closeScanner = () => {
     showQrScanner.value = false;
+};
+
+const closeErrorModal = () => {
+    showError.value = false;
 };
 </script>
 
@@ -459,33 +471,28 @@ const closeScanner = () => {
 
                 <!-- Componente de escaneo -->
                 <div v-else class="overflow-hidden rounded-xl">
-                    <QrcodeStream
+                    <ChatbotQrScanner
                         @decode="onDecode"
                         @error="onScanError"
-                        class="h-64 w-full"
-                        :torch="false"
-                        :camera="'auto'"
                     />
                 </div>
 
                 <p v-if="scanError && !cameraPermissionDenied" class="mt-3 text-center text-sm text-red-400">{{ scanError }}</p>
 
                 <p v-if="!cameraPermissionDenied && !cameraLoading" class="mt-4 text-center text-sm text-neutral-light">
-                    Coloca el código QR frente a la cámara para escanearlo automáticamente
+                    Coloca el código QR de tu invitación frente a la cámara para acceder al chatbot de eventos
                 </p>
-
-                <!-- Botón para cambio de cámara (solo visible en móviles con múltiples cámaras) -->
-<!--                 <div v-if="!cameraPermissionDenied && !cameraLoading" class="mt-4 flex justify-center">
-                    <Button
-                        type="button"
-                        class="cursor-pointer flex items-center justify-center gap-2 rounded-xl bg-navy/50 px-4 py-2 text-sm font-medium text-white hover:bg-navy/70"
-                        @click="() => document.querySelector('.qrcode-stream-camera-select')?.click()"
-                    >
-                        <span>Cambiar cámara</span>
-                    </Button>
-                </div> -->
             </div>
         </div>
+
+        <!-- Modal de Error -->
+        <ErrorModal
+            :show="showError"
+            :error="error || ''"
+            :event-name="eventName"
+            :event-status="eventStatus"
+            @close="closeErrorModal"
+        />
     </AuthBase>
 </template>
 

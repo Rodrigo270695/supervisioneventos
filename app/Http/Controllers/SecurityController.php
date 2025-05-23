@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\User;
 use App\Models\Event;
 use App\Models\EventSecurity;
+use App\Http\Requests\SecurityRequest;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use Spatie\Permission\Models\Role;
 
@@ -44,14 +44,9 @@ class SecurityController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(SecurityRequest $request)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'dni' => ['required', 'string', 'size:8', Rule::unique('users', 'dni')],
-            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users', 'email')],
-            'event_id' => 'required|exists:events,id',
-        ]);
+        $validated = $request->validated();
 
         // Crear usuario con DNI como contraseña
         $user = User::create([
@@ -82,14 +77,9 @@ class SecurityController extends Controller
         return back()->with('message', 'Personal de seguridad registrado exitosamente');
     }
 
-    public function update(Request $request, User $security)
+    public function update(SecurityRequest $request, User $security)
     {
-        $validated = $request->validate([
-            'name' => 'required|string|max:255',
-            'dni' => ['required', 'string', 'size:8', Rule::unique('users', 'dni')->ignore($security->id)],
-            'email' => ['nullable', 'string', 'email', 'max:255', Rule::unique('users', 'email')->ignore($security->id)],
-            'event_id' => 'required|exists:events,id',
-        ]);
+        $validated = $request->validated();
 
         // Actualizar datos del usuario
         $security->update([
