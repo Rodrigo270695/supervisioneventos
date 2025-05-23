@@ -27,11 +27,12 @@ class SecurityController extends Controller
             });
         }
 
-        $securityUsers = $query->paginate(10)
+        $securityUsers = $query->paginate(20)
             ->withQueryString();
 
-        // Obtener solo eventos programados
+        // Obtener solo eventos programados y en progreso
         $events = Event::where('status', 'scheduled')
+            ->orWhere('status', 'in_progress')
             ->select('id', 'name')
             ->orderBy('event_date', 'asc')
             ->get();

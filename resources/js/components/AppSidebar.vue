@@ -46,7 +46,7 @@ const mainNavItems: NavItem[] = [
     },
     {
         title: 'Control de Acceso',
-        href: '/guest-access',
+        href: '/guest-accesses',
         icon: CheckCircle,
     },
 ];

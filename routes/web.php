@@ -13,6 +13,7 @@ use App\Http\Controllers\TimeController;
 use App\Http\Controllers\NoteController;
 use App\Http\Controllers\GuestController;
 use App\Http\Controllers\SecurityController;
+use App\Http\Controllers\GuestAccessController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -66,6 +67,17 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // Rutas públicas para verificación de QR y acceso
 Route::get('/guest/verify/{qr_code}', [GuestController::class, 'verifyAccess'])->name('guest.verify');
 Route::post('/guest/{guest}/access', [GuestController::class, 'registerAccess'])->name('guest.access');
+
+// Rutas para control de acceso
+Route::middleware(['auth'])->group(function () {
+    Route::get('/guest-accesses', [GuestAccessController::class, 'index'])->name('guest-accesses.index');
+    Route::get('/guest-accesses/scan', [GuestAccessController::class, 'scan'])->name('guest-accesses.scan');
+    Route::post('/guest-accesses', [GuestAccessController::class, 'store'])->name('guest-accesses.store');
+});
+
+Route::post('/api/guest-accesses/validate', [GuestAccessController::class, 'validateAccess'])
+    ->middleware(['auth'])
+    ->name('guest-accesses.validate');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

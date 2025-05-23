@@ -64,12 +64,19 @@ class GuestController extends Controller
             'used_passes' => 0,
         ]);
 
+        // Generar la imagen del QR
+        $qrImage = QrCode::format('svg')
+            ->size(300)
+            ->errorCorrection('H')
+            ->generate($qrCode);
+
         if ($request->wantsJson()) {
             return response()->json([
                 'message' => 'Invitado registrado exitosamente',
                 'guest' => [
                     ...$guest->toArray(),
                     'full_name' => $guest->full_name,
+                    'qr_image' => base64_encode($qrImage),
                 ],
             ]);
         }
@@ -168,5 +175,15 @@ class GuestController extends Controller
             });
 
         return response()->json($guests);
+    }
+
+    public function getQrCode(Guest $guest)
+    {
+        $qrImage = QrCode::format('svg')
+            ->size(300)
+            ->errorCorrection('H')
+            ->generate($guest->qr_code);
+
+        return response($qrImage)->header('Content-Type', 'image/svg+xml');
     }
 }

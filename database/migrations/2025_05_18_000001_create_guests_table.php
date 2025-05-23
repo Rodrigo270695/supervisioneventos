@@ -31,6 +31,7 @@ return new class extends Migration
         Schema::create('guest_accesses', function (Blueprint $table) {
             $table->id();
             $table->foreignId('guest_id')->constrained()->cascadeOnDelete();
+            $table->foreignId('event_id')->constrained()->restrictOnDelete();
             $table->integer('people_count');
             $table->timestamp('access_datetime');
             $table->string('access_type'); // 'entry' or 'exit'
@@ -39,6 +40,7 @@ return new class extends Migration
 
             // Índices
             $table->index('guest_id');
+            $table->index('event_id');
             $table->index('access_datetime');
         });
     }

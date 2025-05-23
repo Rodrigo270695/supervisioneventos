@@ -8,6 +8,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
+use App\Enums\EventStatus;
 
 class Event extends Model
 {
@@ -29,6 +30,7 @@ class Event extends Model
         'event_date' => 'date:Y-m-d',
         'start_time' => 'string',
         'end_time' => 'string',
+        'status' => EventStatus::class,
     ];
 
     protected function serializeDate($date)
@@ -85,5 +87,10 @@ class Event extends Model
         return $this->belongsToMany(User::class, 'event_security')
             ->withPivot('active')
             ->withTimestamps();
+    }
+
+    public function guestAccesses(): HasMany
+    {
+        return $this->hasMany(GuestAccess::class);
     }
 }

@@ -81,7 +81,9 @@ class User extends Authenticatable
         return $this->dni;
     }
 
-    // Relación con eventos a través de event_security
+    /**
+     * Obtener los eventos asignados al usuario de seguridad
+     */
     public function events(): BelongsToMany
     {
         return $this->belongsToMany(Event::class, 'event_security')
