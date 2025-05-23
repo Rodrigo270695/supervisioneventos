@@ -13,7 +13,7 @@ return new class extends Migration
             $table->foreignId('event_id')->constrained()->cascadeOnDelete();
             $table->string('first_name', 40);
             $table->string('last_name', 40);
-            $table->string('dni', 8)->unique();
+            $table->string('dni', 8)->nullable();
             $table->integer('table_number');
             $table->integer('passes')->default(1);
             $table->integer('used_passes')->default(0);

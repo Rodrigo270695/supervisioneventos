@@ -39,7 +39,6 @@
                 :error="form.errors.dni"
                 placeholder="Ingrese el DNI"
                 :maxlength="8"
-                required
             />
 
             <!-- Número de Mesa -->

@@ -17,7 +17,7 @@ return new class extends Migration
             $table->foreignId('host_type_id')->constrained()->restrictOnDelete();
             $table->string('nombres', 40);
             $table->string('apellidos', 40);
-            $table->string('dni', 8);
+            $table->string('dni', 8)->nullable();
             $table->unsignedTinyInteger('edad')->nullable();
             $table->string('correo')->nullable();
             $table->timestamps();

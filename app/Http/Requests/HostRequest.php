@@ -29,7 +29,7 @@ class HostRequest extends FormRequest
             'nombres' => ['required', 'string', 'max:100', 'min:2'],
             'apellidos' => ['required', 'string', 'max:100', 'min:2'],
             'dni' => [
-                'required',
+                'nullable',
                 'string',
                 'size:8',
                 Rule::unique('hosts')->where(function ($query) {

@@ -39,7 +39,7 @@ class GuestRequest extends FormRequest
             'first_name' => ['required', 'string', 'max:40', 'min:2'],
             'last_name' => ['required', 'string', 'max:40', 'min:2'],
             'dni' => [
-                'required',
+                'nullable',
                 'string',
                 'size:8',
                 Rule::unique('guests')->where(function ($query) {

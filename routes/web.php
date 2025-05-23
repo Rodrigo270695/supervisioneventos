@@ -15,6 +15,7 @@ use App\Http\Controllers\GuestController;
 use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\GuestAccessController;
 use App\Http\Controllers\AccessReportController;
+use App\Http\Controllers\ManualGuestAccessController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -71,9 +72,14 @@ Route::post('/guest/{guest}/access', [GuestController::class, 'registerAccess'])
 
 // Rutas para control de acceso
 Route::middleware(['auth'])->group(function () {
-    Route::get('/guest-accesses', [GuestAccessController::class, 'index'])->name('guest-accesses.index');
-    Route::get('/guest-accesses/scan', [GuestAccessController::class, 'scan'])->name('guest-accesses.scan');
-    Route::post('/guest-accesses', [GuestAccessController::class, 'store'])->name('guest-accesses.store');
+    Route::get('guest-accesses', [GuestAccessController::class, 'index'])->name('guest-accesses.index');
+    Route::get('guest-accesses/scan', [GuestAccessController::class, 'scan'])->name('guest-accesses.scan');
+    Route::post('guest-accesses', [GuestAccessController::class, 'store'])->name('guest-accesses.store');
+
+    // Rutas para registro manual de acceso
+    Route::get('manual-guest-accesses', [ManualGuestAccessController::class, 'index'])->name('manual-guest-accesses.index');
+    Route::get('manual-guest-accesses/validate/{guest}', [ManualGuestAccessController::class, 'validateGuest'])->name('manual-guest-accesses.validate');
+    Route::post('manual-guest-accesses', [ManualGuestAccessController::class, 'store'])->name('manual-guest-accesses.store');
 });
 
 Route::post('/api/guest-accesses/validate', [GuestAccessController::class, 'validateAccess'])

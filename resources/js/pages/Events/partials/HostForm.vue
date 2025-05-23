@@ -20,7 +20,7 @@
                     :error="form.errors.nombres"
                     :maxlength="100"
                     required
-                /> 
+                />
 
                 <FormInput
                     id="apellidos"
@@ -39,7 +39,6 @@
                     v-model="form.dni"
                     :error="form.errors.dni"
                     :maxlength="8"
-                    required
                 />
 
                 <FormInput

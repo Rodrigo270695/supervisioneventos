@@ -44,13 +44,13 @@ class EventController extends Controller
         ]);
 
         // Cargar tipos de anfitriones para el formulario
-        $hostTypes = HostType::all();
+        $hostTypes = HostType::orderBy('name', 'asc')->get();
 
         // Cargar tipos de tiempo para el formulario
-        $timeTypes = TimeType::all();
+        $timeTypes = TimeType::orderBy('name', 'asc')->get();
 
         // Cargar tipos de eventos para el formulario de edición
-        $eventTypes = EventType::all();
+        $eventTypes = EventType::orderBy('name', 'asc')->get();
 
         // Asegurarnos de que los hosts incluyan toda la información necesaria
         $hosts = $event->hosts->map(function ($host) {

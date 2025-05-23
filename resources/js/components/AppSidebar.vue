@@ -57,8 +57,14 @@ const allNavItems: NavItem[] = [
         roles: ['admin']
     },
     {
-        title: 'Control de Acceso',
+        title: 'Registro de Acceso QR',
         href: '/guest-accesses',
+        icon: CheckCircle,
+        roles: ['admin', 'security'] // Accesible para ambos roles
+    },
+    {
+        title: 'Registro de Acceso Manual',
+        href: '/manual-guest-accesses',
         icon: CheckCircle,
         roles: ['admin', 'security'] // Accesible para ambos roles
     },
