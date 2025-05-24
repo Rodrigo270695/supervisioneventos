@@ -13,6 +13,7 @@ import GuestList from './partials/GuestList.vue';
 import TabNavigation from '@/components/TabNavigation.vue';
 import EventInfo from './components/EventInfo.vue';
 import EventHeader from './components/EventHeader.vue';
+import PlanList from './partials/PlanList.vue';
 
 interface EventType {
     id: number;
@@ -101,6 +102,21 @@ interface PaginatedGuests {
     per_page: number;
 }
 
+interface PlanType {
+    id: number;
+    name: string;
+    description: string | null;
+}
+
+interface Plan {
+    id: number;
+    event_id: number;
+    plan_type_id: number;
+    image: string;
+    description: string | null;
+    planType: PlanType;
+}
+
 interface Props {
     event: Event;
     hostTypes: HostType[];
@@ -113,6 +129,8 @@ interface Props {
     filters?: {
         search: string;
     };
+    plans: Plan[];
+    planTypes: PlanType[];
 }
 
 const props = defineProps<Props>();
@@ -199,6 +217,11 @@ function refreshNotes() {
 function refreshGuests() {
     router.reload({ only: ['guests'] });
 }
+
+// Refrescar lista de planes
+function refreshPlans() {
+    router.reload({ only: ['plans'] });
+}
 </script>
 
 <template>
@@ -250,28 +273,12 @@ function refreshGuests() {
 
                 <!-- Planos -->
                 <div v-if="activeTab === 'layout'" class="animate-in fade-in duration-200">
-                    <div class="bg-card dark:bg-card/90 rounded-lg shadow-sm border border-border/40 p-5">
-                        <div class="flex justify-between items-center mb-5">
-                            <h2 class="text-lg font-medium">Diseño de planos</h2>
-                            <button class="bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Crear plano
-                            </button>
-                        </div>
-
-                        <!-- Lista de planos (vacía inicialmente) -->
-                        <div class="py-10 flex flex-col items-center justify-center text-center">
-                            <div class="bg-primary/10 dark:bg-primary/5 p-3 rounded-full mb-3">
-                                <Map class="h-6 w-6 text-primary" />
-                            </div>
-                            <h3 class="text-lg font-medium mb-1">Sin planos disponibles</h3>
-                            <p class="text-muted-foreground text-sm max-w-md">
-                                Este evento aún no tiene planos diseñados. Crea planos para visualizar la distribución del espacio y las mesas.
-                            </p>
-                            <button class="mt-4 bg-primary hover:bg-primary/90 text-white rounded-md px-3 py-1.5 text-sm font-medium transition-colors">
-                                Crear primer plano
-                            </button>
-                        </div>
-                    </div>
+                    <PlanList
+                        :event-id="event.id"
+                        :plans="plans"
+                        :plan-types="planTypes"
+                        @plan-updated="refreshPlans"
+                    />
                 </div>
 
                 <!-- Invitados -->
@@ -286,7 +293,7 @@ function refreshGuests() {
                         :filters="filters"
                         @guest-updated="refreshGuests"
                     />
-                        </div>
+                </div>
 
                 <!-- Notas -->
                 <div v-if="activeTab === 'notes'" class="animate-in fade-in duration-200">

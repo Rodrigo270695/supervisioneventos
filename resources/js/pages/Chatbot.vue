@@ -4,25 +4,54 @@ import { ref, onMounted, computed } from 'vue';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Send, MessageSquare, ChevronRight, Calendar, Clock, MapPin, User, ArrowLeft, ThumbsUp, ThumbsDown, Menu, X, Users, CreditCard, LogOut } from 'lucide-vue-next';
+import axios from 'axios';
 
 // Props que recibimos del controlador
 const props = defineProps<{
     welcomeMessage: string;
     eventInfo: {
         name: string;
-        date: string;
-        time: string;
-        location: string;
-        table: string;
-        description?: string;
-        passes: {
+        type: string;
+        date: {
+            formatted: string;
+            day: number;
+            month: string;
+            year: number;
+            dayName: string;
+            daysUntil: number;
+        };
+        time: {
+            start: string;
+            end: string | null;
+            formatted: string;
+            duration: number | null;
+        };
+        location: {
+            address: string;
+            coordinates: string | null;
+            mapUrl: string | null;
+        };
+        capacity: {
             total: number;
-            used: number;
-            available: number;
+            current: number;
+        };
+        table: {
+            number: number;
+            formatted: string;
+        };
+        description?: string;
+        status: {
+            code: string;
+            label: string;
         };
     };
     guest: {
-        name: string;
+        id: number;
+        name: {
+            first: string;
+            last: string;
+            full: string;
+        };
         dni: string;
         tableNumber: number;
         passes: {
@@ -30,8 +59,9 @@ const props = defineProps<{
             used: number;
             available: number;
         };
+        lastAccess: string | null;
     };
-    qrData?: string;
+    chatbotResponses: Record<string, string>;
 }>();
 
 // Estado del chatbot
@@ -63,14 +93,14 @@ const botResponses = {
 
 // Opciones rápidas que mostraremos como botones
 const quickOptions = [
-    { text: 'Horario', query: 'horario', icon: Clock },
-    { text: 'Ubicación', query: 'ubicación', icon: MapPin },
-    { text: 'Estacionamiento', query: 'estacionamiento', icon: User },
-    { text: 'Código de vestimenta', query: 'codigo de vestimenta', icon: User },
-    { text: 'Menú', query: 'menu', icon: User },
-    { text: 'WiFi', query: 'wifi', icon: User },
-    { text: 'Regalos', query: 'regalos', icon: User },
-    { text: 'Transporte', query: 'transporte', icon: User },
+    { text: 'Horario', query: '¿cuál es el horario?', icon: Clock },
+    { text: 'Ubicación', query: '¿dónde es el evento?', icon: MapPin },
+    { text: 'Mi Mesa', query: '¿cuál es mi mesa?', icon: User },
+    { text: 'Pases', query: '¿cuántos pases tengo?', icon: Users },
+    { text: 'Fecha', query: '¿cuándo es el evento?', icon: Calendar },
+    { text: 'Capacidad', query: '¿cuál es la capacidad?', icon: User },
+    { text: 'Estado', query: '¿cuál es el estado del evento?', icon: User },
+    { text: 'Ayuda', query: '¿en qué me puedes ayudar?', icon: User },
 ];
 
 // Estado para seguimiento de mensajes útiles
@@ -95,7 +125,7 @@ const randomTip = computed(() => {
 });
 
 // Mensaje de bienvenida por defecto
-const defaultWelcomeMessage = "¡Bienvenido al asistente virtual del evento! Estoy aquí para ayudarte con cualquier información que necesites.";
+const defaultWelcomeMessage = `¡Bienvenido al asistente virtual del evento! Estoy aquí para ayudarte con cualquier información que necesites. Tu mesa asignada es la ${props.eventInfo.table.number}.`;
 
 // Añadir el mensaje de bienvenida al cargar
 onMounted(() => {
@@ -136,66 +166,116 @@ const addMessage = (sender: 'user' | 'bot' | 'tip', text: string) => {
     return messageId;
 };
 
-// Función para enviar un mensaje del usuario
-const sendMessage = () => {
+// Función para enviar un mensaje con reintentos
+const sendMessage = async (retryCount = 0) => {
     if (!userInput.value.trim()) return;
 
     const userMessage = userInput.value;
-    addMessage('user', userMessage);
+    const messageId = addMessage('user', userMessage);
     userInput.value = '';
 
     // Simular que el bot está escribiendo
     isTyping.value = true;
 
-    // Simulamos un retraso en la respuesta del bot para que parezca más natural
-    setTimeout(() => {
+    try {
+        // Enviar mensaje a RASA a través del controlador
+        const response = await axios.post(route('chatbot.message'), {
+            guest_id: props.guest.id,
+            message: userMessage,
+            table_number: props.eventInfo.table.number
+        });
+
         isTyping.value = false;
 
-        // Buscar una respuesta en nuestras respuestas predefinidas
-        let responded = false;
-        const userMessageLower = userMessage.toLowerCase();
+        if (response.data && response.data.length > 0) {
+            response.data.forEach(msg => {
+                const botMessageId = addMessage('bot', msg.text);
 
-        // Verificar si la entrada del usuario coincide con alguna de nuestras palabras clave
-        for (const [keyword, response] of Object.entries(botResponses)) {
-            if (userMessageLower.includes(keyword.toLowerCase())) {
-                addMessage('bot', response);
-                responded = true;
-                break;
+                // Si hay imágenes, botones u otros elementos, mostrarlos
+                if (msg.image) {
+                    addMessage('bot', `[Imagen: ${msg.image}]`);
+                }
+                if (msg.buttons) {
+                    msg.buttons.forEach(button => {
+                        addMessage('bot', `[Botón: ${button.title}]`);
+                    });
+                }
+            });
+        } else {
+            addMessage('bot', 'Lo siento, no pude procesar tu mensaje. ¿Podrías intentar de otra manera?');
+        }
+    } catch (error) {
+        console.error('Error al procesar mensaje:', error);
+        isTyping.value = false;
+
+        // Si es un error de timeout y no hemos excedido los reintentos
+        if (error.code === 'ECONNABORTED' && retryCount < 2) {
+            addMessage('bot', 'El servicio está un poco lento, intentando de nuevo...');
+            // Esperar 1 segundo antes de reintentar
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return sendMessage(retryCount + 1);
+        }
+
+        // Mostrar mensaje de error específico según el tipo de error
+        let errorMessage = 'Lo siento, hubo un problema al procesar tu mensaje. ¿Podrías intentar de nuevo?';
+
+        if (error.response) {
+            // El servidor respondió con un código de error
+            if (error.response.status === 500) {
+                errorMessage = error.response.data?.[0]?.text || 'El servicio está experimentando problemas. Por favor, intenta más tarde.';
+            } else if (error.response.status === 404) {
+                errorMessage = 'No se pudo conectar con el servicio de chat. Por favor, verifica tu conexión.';
             }
+        } else if (error.request) {
+            // La solicitud fue hecha pero no se recibió respuesta
+            errorMessage = 'No se pudo establecer conexión con el servicio. Por favor, verifica tu conexión a internet.';
         }
 
-        // Si no encontramos una respuesta específica, enviamos una genérica
-        if (!responded) {
-            addMessage('bot', 'Gracias por tu mensaje. Un miembro del staff te ayudará con esa consulta en breve. Mientras tanto, ¿hay algo más en lo que pueda ayudarte?');
-        }
-
-        // Ocasionalmente sugerimos una pregunta relacionada
-        if (Math.random() > 0.7) {
-            setTimeout(() => {
-                addMessage('bot', '¿Puedo ayudarte con algo más? Tal vez te interese saber sobre el horario o el código de vestimenta.');
-            }, 2000);
-        }
-    }, 1500);
+        addMessage('bot', errorMessage);
+    }
 };
 
 // Función para manejar respuestas rápidas al hacer clic en botones
-const handleQuickOption = (query: string) => {
+const handleQuickOption = async (query: string, retryCount = 0) => {
     addMessage('user', query);
-
-    // Simular que el bot está escribiendo
     isTyping.value = true;
 
-    // Simulamos respuesta
-    setTimeout(() => {
+    try {
+        const response = await axios.post(route('chatbot.message'), {
+            guest_id: props.guest.id,
+            message: query,
+            table_number: props.eventInfo.table.number
+        });
+
         isTyping.value = false;
 
-        const lowerQuery = query.toLowerCase();
-        if (Object.prototype.hasOwnProperty.call(botResponses, lowerQuery)) {
-            addMessage('bot', botResponses[lowerQuery as keyof typeof botResponses]);
+        if (response.data && response.data.length > 0) {
+            response.data.forEach(msg => {
+                addMessage('bot', msg.text);
+            });
         } else {
-            addMessage('bot', 'Gracias por tu interés. Un miembro del staff te asistirá con esa consulta en breve.');
+            addMessage('bot', 'Lo siento, no pude procesar tu consulta. ¿Podrías intentar de otra manera?');
         }
-    }, 1000);
+    } catch (error) {
+        console.error('Error al procesar consulta rápida:', error);
+        isTyping.value = false;
+
+        // Si es un error de timeout y no hemos excedido los reintentos
+        if (error.code === 'ECONNABORTED' && retryCount < 2) {
+            addMessage('bot', 'El servicio está un poco lento, intentando de nuevo...');
+            // Esperar 1 segundo antes de reintentar
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            return handleQuickOption(query, retryCount + 1);
+        }
+
+        let errorMessage = error.response?.data?.[0]?.text || 'Lo siento, hubo un problema al procesar tu consulta. ¿Podrías intentar de nuevo?';
+
+        if (error.response?.status === 500) {
+            errorMessage = 'El servicio está experimentando problemas. Por favor, intenta más tarde.';
+        }
+
+        addMessage('bot', errorMessage);
+    }
 };
 
 const toggleSidebar = () => {
@@ -231,11 +311,11 @@ const formatTime = (time24h: string) => {
 
 // Función para formatear el rango de horas
 const formatTimeRange = computed(() => {
-    const startFormatted = formatTime(props.eventInfo.time.split(' - ')[0]);
+    const startFormatted = formatTime(props.eventInfo.time.start);
     let endFormatted = '';
 
-    if (props.eventInfo.time.includes(' - ')) {
-        endFormatted = formatTime(props.eventInfo.time.split(' - ')[1]);
+    if (props.eventInfo.time.end) {
+        endFormatted = formatTime(props.eventInfo.time.end);
         return `${startFormatted} - ${endFormatted}`;
     }
 
@@ -274,7 +354,7 @@ const formatTimeRange = computed(() => {
                             <User class="h-4 w-4 text-navy dark:text-navy-light" />
                         </div>
                         <span class="text-sm font-medium text-neutral-dark dark:text-white">
-                            {{ guest.name }}
+                            {{ guest.name.full }}
                         </span>
                         <ChevronRight
                             class="h-4 w-4 text-neutral-medium dark:text-neutral-light/50 transition-transform duration-200"
@@ -288,7 +368,7 @@ const formatTimeRange = computed(() => {
                         class="logout-menu absolute right-0 top-full mt-2 w-56 rounded-lg bg-white dark:bg-neutral-dark/95 shadow-lg ring-1 ring-black/5 dark:ring-white/10 py-1 z-50"
                     >
                         <div class="px-4 py-3 border-b border-neutral-light/20 dark:border-neutral-dark/60">
-                            <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ guest.name }}</p>
+                            <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ guest.name.full }}</p>
                             <p class="text-xs text-neutral-medium dark:text-neutral-light/70 mt-1">DNI: {{ guest.dni }}</p>
                         </div>
                         <div class="p-2">
@@ -331,7 +411,7 @@ const formatTimeRange = computed(() => {
                                 </div>
                                 <div>
                                     <p class="text-xs text-neutral-medium dark:text-neutral-light/50">Fecha</p>
-                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.date }}</p>
+                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.date.formatted }}</p>
                                 </div>
                             </div>
 
@@ -351,7 +431,7 @@ const formatTimeRange = computed(() => {
                                 </div>
                                 <div>
                                     <p class="text-xs text-neutral-medium dark:text-neutral-light/50">Ubicación</p>
-                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.location }}</p>
+                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.location.address }}</p>
                                 </div>
                             </div>
 
@@ -361,7 +441,7 @@ const formatTimeRange = computed(() => {
                                 </div>
                                 <div>
                                     <p class="text-xs text-neutral-medium dark:text-neutral-light/50">Mesa asignada</p>
-                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.table }}</p>
+                                    <p class="text-sm font-medium text-neutral-dark dark:text-white">{{ eventInfo.table.formatted }}</p>
                                 </div>
                             </div>
 

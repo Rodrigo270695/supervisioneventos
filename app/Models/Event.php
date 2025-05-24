@@ -9,6 +9,7 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\BelongsToMany;
 use App\Enums\EventStatus;
+use App\Models\Plan;
 
 class Event extends Model
 {
@@ -92,5 +93,10 @@ class Event extends Model
     public function guestAccesses(): HasMany
     {
         return $this->hasMany(GuestAccess::class);
+    }
+
+    public function plans(): HasMany
+    {
+        return $this->hasMany(Plan::class);
     }
 }

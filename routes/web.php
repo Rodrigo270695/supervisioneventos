@@ -16,6 +16,7 @@ use App\Http\Controllers\SecurityController;
 use App\Http\Controllers\GuestAccessController;
 use App\Http\Controllers\AccessReportController;
 use App\Http\Controllers\ManualGuestAccessController;
+use App\Http\Controllers\PlanController;
 
 Route::get('/', function () {
     return redirect()->route('login');
@@ -64,6 +65,11 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     // Rutas para gestión de personal de seguridad
     Route::resource('security', SecurityController::class);
+
+    // Rutas para planos
+    Route::post('/plans', [PlanController::class, 'store'])->name('plans.store');
+    Route::put('/plans/{plan}', [PlanController::class, 'update'])->name('plans.update');
+    Route::delete('/plans/{plan}', [PlanController::class, 'destroy'])->name('plans.destroy');
 });
 
 // Rutas públicas para verificación de QR y acceso
@@ -91,6 +97,8 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/reports/access', [AccessReportController::class, 'index'])->name('reports.access');
     Route::get('/reports/access/{event}/export', [AccessReportController::class, 'export'])->name('reports.access.export');
 });
+
+Route::post('/chatbot/message', [ChatbotController::class, 'processMessage'])->name('chatbot.message');
 
 require __DIR__.'/settings.php';
 require __DIR__.'/auth.php';

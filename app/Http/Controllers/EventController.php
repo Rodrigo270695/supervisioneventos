@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Event;
 use App\Models\EventType;
 use App\Models\HostType;
+use App\Models\PlanType;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use App\Http\Requests\EventRequest;
@@ -41,6 +42,7 @@ class EventController extends Controller
             },
             'times.timeType',
             'notes',
+            'plans.planType',
         ]);
 
         // Cargar tipos de anfitriones para el formulario
@@ -51,6 +53,9 @@ class EventController extends Controller
 
         // Cargar tipos de eventos para el formulario de edición
         $eventTypes = EventType::orderBy('name', 'asc')->get();
+
+        // Cargar tipos de planos para el formulario
+        $planTypes = PlanType::orderBy('name', 'asc')->get();
 
         // Asegurarnos de que los hosts incluyan toda la información necesaria
         $hosts = $event->hosts->map(function ($host) {
@@ -101,6 +106,21 @@ class EventController extends Controller
             ];
         });
 
+        // Formatear los planos
+        $plans = $event->plans->map(function ($plan) {
+            return [
+                'id' => $plan->id,
+                'event_id' => $plan->event_id,
+                'plan_type_id' => $plan->plan_type_id,
+                'image' => $plan->image,
+                'description' => $plan->description,
+                'planType' => [
+                    'id' => $plan->planType->id,
+                    'name' => $plan->planType->name
+                ]
+            ];
+        });
+
         // Preparar la consulta de invitados con paginación y búsqueda
         $guestsQuery = $event->guests()->orderBy('table_number');
 
@@ -132,6 +152,8 @@ class EventController extends Controller
             'timeTypes' => $timeTypes,
             'eventTypes' => $eventTypes,
             'guests' => $guests,
+            'plans' => $plans,
+            'planTypes' => $planTypes,
             'filters' => [
                 'search' => $request->input('search', ''),
             ],
